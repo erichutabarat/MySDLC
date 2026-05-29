@@ -69,9 +69,10 @@ All services run as Docker containers managed by Docker Compose on a single VPS.
 
 | Concern              | Choice / Notes                                                    |
 |----------------------|-------------------------------------------------------------------|
-| HTTP Router          | `chi` or `gin` — lightweight, idiomatic REST routing             |
+| HTTP Router          | `gin` — lightweight, idiomatic REST routing             |
 | Architecture         | Layered: Handler → Service → Repository                          |
-| ORM / Query          | `sqlx` for typed SQL queries (no heavy ORM; raw SQL for control) |
+| Database             | MySQL                                                            |
+| ORM / Query          | `GORM` for typed SQL queries (no heavy ORM; raw SQL for control) |
 | Validation           | `go-playground/validator`                                         |
 | Auth Middleware      | Custom JWT middleware; Admin Guard middleware (role check)        |
 | Password Hashing     | `golang.org/x/crypto/bcrypt`                                      |
