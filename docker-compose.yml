@@ -21,6 +21,8 @@ services:
     build:
       context: ./mysdlc_backend
       dockerfile: Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache-backend
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +42,8 @@ services:
     build:
       context: ./mysdlc_frontend
       dockerfile: Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache-frontend
     depends_on:
       - backend
     environment:
