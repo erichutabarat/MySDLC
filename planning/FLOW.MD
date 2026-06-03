@@ -822,7 +822,7 @@
 | `sdlc_methodologies`   | id, name, description, is_active, created_by, created_at, updated_at                    | **Admin**   |
 | `sdlc_steps`           | id, sdlc_id, name, description, order_index, is_required, estimated_duration_days, allowed_doc_types, created_at | **Admin**   |
 | `projects`             | id, name, description, sdlc_id, owner_id, current_phase, status, created_at             | User        |
-| `project_members`      | project_id, user_id, role (owner\|contributor\|viewer)                                   | User        |
+| `project_members`      | project_id, user_id, role (owner\|contributor\|viewer), status (pending, accepted, rejected)                                   | User        |
 | `project_phases`       | id, project_id, sdlc_step_id, name, order_index, is_required, allowed_doc_types, status, unlocked_at, completed_at | System (cloned) |
 | `tasks`                | id, phase_id, project_id, title, assignee_id, priority, status, due_date                | User        |
 | `phase_documents`      | id, phase_id, project_id, title, doc_type, file_url, uploaded_by, uploaded_at           | User        |
