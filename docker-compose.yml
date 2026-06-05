@@ -50,7 +50,7 @@ services:
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_CAPTCHA_SITE_KEY=0x4AAAAAADeDOS3zEVLcAeav
     ports:
       - "3000:3000" # Adjust to your frontend port
