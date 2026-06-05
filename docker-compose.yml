@@ -9,9 +9,10 @@ services:
       MYSQL_USER: ${DB_USER}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
     ports:
       - "3306:3306"
     volumes:
@@ -49,6 +50,7 @@ services:
     depends_on:
       - backend
     environment:
+      - NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_CAPTCHA_SITE_KEY=0x4AAAAAADeDOS3zEVLcAeav
     ports:
       - "3000:3000" # Adjust to your frontend port
