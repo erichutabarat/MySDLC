@@ -1,0 +1,125 @@
+name: Deploy MySDLC
+
+on:
+  repository_dispatch:
+    types: [frontend-updated, backend-updated]
+
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Which service to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options: [all, frontend, backend]
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show what triggered this deployment
+        run: |
+          echo "Triggered by: ${{ github.event_name }}"
+          echo "Service:      ${{ github.event.client_payload.service || inputs.service }}"
+          echo "Commit:       ${{ github.event.client_payload.sha || 'manual' }}"
+          echo "Actor:        ${{ github.event.client_payload.actor || github.actor }}"
+
+      - name: SSH into VPS and deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            SERVICE="${{ github.event.client_payload.service || inputs.service || 'all' }}"
+
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Deploying: $SERVICE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            cd /home/ericdaniel/MySDLC
+
+            # ── Helper: wait for a port to be open ──────────────────
+            # wait_for_port <port> <timeout_seconds>
+            # returns 0 (success) if port opens within timeout
+            # returns 1 (fail) if timeout reached
+            wait_for_port() {
+              local PORT=$1
+              local TIMEOUT=${2:-30}
+              local ELAPSED=0
+              echo "Waiting for port $PORT (timeout: ${TIMEOUT}s)..."
+              while ! nc -z localhost "$PORT" 2>/dev/null; do
+                if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                  echo "❌ Port $PORT did not open within ${TIMEOUT}s"
+                  return 1
+                fi
+                sleep 2
+                ELAPSED=$((ELAPSED + 2))
+              done
+              echo "✅ Port $PORT is open (${ELAPSED}s)"
+              return 0
+            }
+
+            # ── Step 1: Pull updated source ─────────────────────────
+            if [ "$SERVICE" = "frontend" ] || [ "$SERVICE" = "all" ]; then
+              echo "── Pulling frontend..."
+              cd mysdlc_frontend && git fetch origin main && git pull origin main && cd ..
+            fi
+
+            if [ "$SERVICE" = "backend" ] || [ "$SERVICE" = "all" ]; then
+              echo "── Pulling backend..."
+              cd mysdlc_backend && git fetch origin main && git pull origin main && cd ..
+            fi
+
+            echo "── Pulling root..."
+            git fetch origin main && git pull origin main
+
+            # ── Step 2: Build and restart only the changed service ──
+            # NOTE: never use `docker compose down` — it kills the DB too.
+            # --no-deps restarts only the target container, nothing else.
+            echo "── Building $SERVICE..."
+
+            if [ "$SERVICE" = "frontend" ]; then
+              docker compose build --no-cache frontend
+              docker compose up -d --no-deps --force-recreate frontend
+
+            elif [ "$SERVICE" = "backend" ]; then
+              docker compose build --no-cache backend
+              docker compose up -d --no-deps --force-recreate backend
+
+            else
+              docker compose build --no-cache
+              docker compose up -d --force-recreate
+            fi
+
+            # ── Step 3: Clean up dangling images ────────────────────
+            docker image prune -f
+
+            # ── Step 4: Health check via port polling ────────────────
+            # Polls every 2s until port is open OR timeout is reached.
+            # Timeout = active means deployment succeeded.
+            # Timeout = unreachable means something went wrong.
+            echo "── Health checks..."
+            FAILED=0
+
+            if [ "$SERVICE" = "frontend" ] || [ "$SERVICE" = "all" ]; then
+              wait_for_port 3000 60 || FAILED=1
+            fi
+
+            if [ "$SERVICE" = "backend" ] || [ "$SERVICE" = "all" ]; then
+              wait_for_port 8080 60 || FAILED=1
+            fi
+
+            if [ "$FAILED" = "1" ]; then
+              echo ""
+              echo "❌ Deployment failed — one or more services did not start"
+              echo "Run: docker compose logs --tail=50 to investigate"
+              exit 1
+            fi
+
+            echo ""
+            echo "✅ Deployment complete: $SERVICE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
