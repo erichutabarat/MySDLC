@@ -4,7 +4,7 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_PASSWORD: ${DB_PASS} 
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_PASSWORD: ${DB_PASS}
       MYSQL_USER: ${DB_USER}
     healthcheck:
@@ -13,17 +13,14 @@ services:
       timeout: 10s
       retries: 10
       start_period: 90s
-    ports:
-      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - mysdlc_net
 
   backend:
-    build:
-      context: ./mysdlc_backend
-      dockerfile: Dockerfile
-      cache_from:
-        - type=local,src=/tmp/.buildx-cache-backend
+    image: ghcr.io/erichutabarat/mysdlc_backend:latest
+    restart: always
     depends_on:
       db:
         condition: service_healthy
@@ -35,25 +32,26 @@ services:
       DB_PASS: ${DB_PASS}
       JWT_SECRET: ${JWT_SECRET}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
-      
     ports:
-      - "8080:8080" # Adjust to your backend port
+      - "8080:8080"
+    networks:
+      - mysdlc_net
 
   frontend:
-    build:
-      context: ./mysdlc_frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_CAPTCHA_SITE_KEY=0x4AAAAAADeDOS3zEVLcAeav
-      cache_from:
-        - type=local,src=/tmp/.buildx-cache-frontend
+    image: ghcr.io/erichutabarat/mysdlc_frontend:latest
+    restart: always
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - NEXT_PUBLIC_CAPTCHA_SITE_KEY=0x4AAAAAADeDOS3zEVLcAeav
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_CAPTCHA_SITE_KEY: ${NEXT_PUBLIC_CAPTCHA_SITE_KEY}
     ports:
-      - "3000:3000" # Adjust to your frontend port
+      - "3000:3000"
+    networks:
+      - mysdlc_net
 
 volumes:
   mysql_data:
+
+networks:
+  mysdlc_net:
