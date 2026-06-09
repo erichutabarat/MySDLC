@@ -38,7 +38,7 @@ services:
       - mysdlc_net
 
   frontend:
-    image: ghcr.io/erichutabarat/mysdlc_frontend:latest
+    image: ghcr.io/erichutabarat/mysdlc-frontend:latest
     restart: always
     depends_on:
       - backend
