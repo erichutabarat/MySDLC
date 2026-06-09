@@ -19,7 +19,7 @@ services:
       - mysdlc_net
 
   backend:
-    image: ghcr.io/erichutabarat/mysdlc_backend:latest
+    image: ghcr.io/erichutabarat/mysdlc-backend:latest
     restart: always
     depends_on:
       db:
