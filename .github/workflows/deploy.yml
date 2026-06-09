@@ -32,7 +32,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          stop_on_error: true
           script: |
             SERVICE="${{ github.event.client_payload.service || inputs.service || 'all' }}"
 
@@ -49,7 +48,7 @@ jobs:
             wait_for_port() {
               local PORT=$1
               local TIMEOUT=${2:-30}
-              local ELAPSED=0
+              local ELAPSED=0 
               echo "Waiting for port $PORT (timeout: ${TIMEOUT}s)..."
               while ! nc -z localhost "$PORT" 2>/dev/null; do
                 if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
