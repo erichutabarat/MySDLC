@@ -9,6 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check secrets are set
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "❌ VPS_HOST is empty or not set"
+          else
+            echo "✅ VPS_HOST is set (length: ${#VPS_HOST})"
+          fi
+
+          if [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "❌ VPS_USER is empty or not set"
+          else
+            echo "✅ VPS_USER is set"
+          fi
+
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "❌ VPS_SSH_KEY is empty or not set"
+          else
+            echo "✅ VPS_SSH_KEY is set"
+          fi
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+
+      - name: Print masked host hint
+        run: |
+          # Print first char only to confirm it looks like an IP
+          HOST="${{ secrets.VPS_HOST }}"
+          echo "Host starts with: ${HOST:0:1}"
+          echo "Host length: ${#HOST}"
+
       - name: Test SSH connection
         uses: appleboy/ssh-action@v1
         with:
@@ -19,4 +48,3 @@ jobs:
             echo "✅ SSH connection successful"
             echo "User: $(whoami)"
             echo "Host: $(hostname)"
-            echo "Dir: $(pwd)"
